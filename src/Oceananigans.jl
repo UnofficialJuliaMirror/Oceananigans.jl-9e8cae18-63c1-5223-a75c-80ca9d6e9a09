@@ -24,7 +24,7 @@ export
     nodes, xnodes, ynodes, znodes,
 
     # Forcing functions
-    ModelForcing, SimpleForcing,
+    ModelForcing, SimpleForcing, OperationForcing,
 
     # Equation of state
     BuoyancyTracer, SeawaterBuoyancy, LinearEquationOfState,

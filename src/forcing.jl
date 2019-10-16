@@ -1,3 +1,30 @@
+
+zeroforcing(args...) = 0
+
+"""
+    ModelForcing(; u=zeroforcing, v=zeroforcing, w=zeroforcing, tracer_forcings...)
+
+Return a named tuple of forcing functions for each solution field.
+
+Example
+=======
+
+julia> u_forcing = SimpleForcing((x, y, z, t) -> exp(z) * cos(t))
+
+julia> model = Model(forcing=ModelForcing(u=u_forcing))
+"""
+function ModelForcing(; u=zeroforcing, v=zeroforcing, w=zeroforcing, tracer_forcings...)
+    u = at_location((Face, Cell, Cell), u)
+    v = at_location((Cell, Face, Cell), v)
+    w = at_location((Cell, Cell, Face), w)
+
+    return merge((u=u, v=v, w=w), tracer_forcings)
+end
+
+default_tracer_forcing(args...) = zeroforcing
+
+ModelForcing(tracers, proposal_forcing) = with_tracers(tracers, proposal_forcing, default_tracer_forcing,
+                                                       with_velocities=true)
 """
     SimpleForcing{X, Y, Z, F, P}
 
@@ -54,28 +81,17 @@ SimpleForcing(location::Tuple, forcing::SimpleForcing) = SimpleForcing(location,
 at_location(location, u::Function) = u
 at_location(location, u::SimpleForcing) = SimpleForcing{location[1], location[2], location[3]}(u.func, u.parameters)
 
-zeroforcing(args...) = 0
-
-"""
-    ModelForcing(; u=zeroforcing, v=zeroforcing, w=zeroforcing, tracer_forcings...)
-
-Return a named tuple of forcing functions for each solution field.
-
-Example
-=======
-
-julia> u_forcing = SimpleForcing((x, y, z, t) -> exp(z) * cos(t))
-
-julia> model = Model(forcing=ModelForcing(u=u_forcing))
-"""
-function ModelForcing(; u=zeroforcing, v=zeroforcing, w=zeroforcing, tracer_forcings...)
-    u = at_location((Face, Cell, Cell), u)
-    v = at_location((Cell, Face, Cell), v)
-    w = at_location((Cell, Cell, Face), w)
-
-    return merge((u=u, v=v, w=w), tracer_forcings)
+struct OperationForcing{X, Y, Z, O}
+    operation :: O
+    function OperationForcing{X, Y, Z}(operation) where {X, Y, Z}
+        return new{X, Y, Z, typeof(operation)}(operation)
+    end
 end
 
-default_tracer_forcing(args...) = zeroforcing
-ModelForcing(tracers, proposal_forcing) = with_tracers(tracers, proposal_forcing, default_tracer_forcing,
-                                                       with_velocities=true)
+function OperationForcing(operation)
+    X, Y, Z = location(operation)
+    return OperationForcing{X, Y, Z}(operation)
+end
+
+@inline (opforcing::OperationForcing)(i, j, k, args...) = @inbounds opforcing.operation[i, j, k]
+

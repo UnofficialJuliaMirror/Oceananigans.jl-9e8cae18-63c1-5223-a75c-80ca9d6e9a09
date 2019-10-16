@@ -16,7 +16,7 @@ end
 
 @inline Base.getindex(υ::UnaryOperation, i, j, k) = υ.▶(i, j, k, υ.grid, υ.op, υ.arg)
 
-const unary_operators = [:-, :sqrt, :sin, :cos, :exp]
+const unary_operators = [:-, :sqrt, :sin, :cos, :exp, :tanh]
 append!(operators, unary_operators)
 
 for op in unary_operators

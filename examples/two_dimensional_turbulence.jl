@@ -10,7 +10,7 @@
 # For this example, we need `PyPlot` for plotting and `Statistics` for setting up
 # a random initial condition with zero mean velocity.
 
-using Oceananigans, PyPlot, Statistics
+using Oceananigans, PyPlot, Statistics, Oceananigans.AbstractOperations
 
 # In addition to importing plotting and statistics packages, we import
 # some types and functions from `Oceananigans` that will aid in the calculation
@@ -36,20 +36,13 @@ u₀ .-= mean(u₀)
 
 set!(model, u=u₀, v=u₀)
 
-# Next we define a function for calculating the vertical vorticity 
-# associated with the velocity fields `u` and `v`.
-
-function vorticity!(ω, u, v)
-    for j = 1:u.grid.Ny, i = 1:u.grid.Nx
-        @inbounds ω.data[i, j, 1] = ∂x_faa(i, j, 1, u.grid, v.data) - ∂y_afa(i, j, 1, u.grid, u.data) 
-    end
-    return nothing
-end
-
 # Finally, we create the vorticity field for storing `u` and `v`, initialize a
 # figure, and run the model forward
+u, v, w = model.velocities
+vorticity_operation = ∂x(v) - ∂y(u)
 
 ω = Field(Face, Face, Cell, model.architecture, model.grid) 
+vorticity_computation = Computation(vorticity_operation, ω)
 
 close("all")
 fig, ax = subplots()
@@ -57,10 +50,10 @@ fig, ax = subplots()
 for i = 1:10
     time_step!(model, Nt=100, Δt=1e-1)
 
-    vorticity!(ω, model.velocities.u, model.velocities.v)
+    compute!(vorticity_computation)
 
     cla()
-    imshow(interior(ω)[:, :, 1])
+    imshow(ω[:, :, 1])
     ax.axis("off")
     pause(0.1)
 end

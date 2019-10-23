@@ -118,6 +118,75 @@ getbc(bc::BC{C, <:Function}, args...)            where C = bc.condition(args...)
 
 Base.getindex(bc::BC{C, <:AbstractArray}, inds...) where C = getindex(bc.condition, inds...)
 
+
+#####
+##### Wrapper for user-defined boundary condition functions
+#####
+
+"""
+    BoundaryConditionFunction{B, X1, X2, F}
+
+A wrapper for user-defined boundary condition functions.
+"""
+struct BoundaryConditionFunction{B, X, Y, F} <: Function
+    func :: F
+
+    """
+        BoundaryConditionFunction{B, X1, X2}(func)
+
+    A wrapper for user-defined boundary condition functions on the 
+    boundary specified by symbol `B` and at location `(X1, X2)`.
+    """
+    function BoundaryConditionFunction{B, X1, X2}(func)
+        B ∈ (:x, :y, :z) || throw(ArgumentError("The boundary B at which the BoundaryConditionFunction is
+                                                to be applied must be either :x, :y, or :z."))
+        new{B, X1, X2, typeof(func)}(func)
+    end
+end
+
+(bc::BoundaryConditionFunction{:y, X, Y})(i, j, grid, time, args...) where {X, Y} = 
+    bc.func(xnode(X, i, grid), znode(Z, j, grid), time)
+
+(bc::BoundaryConditionFunction{:z, X, Y})(i, j, grid, time, args...) where {X, Y} = 
+    bc.func(xnode(X, i, grid), ynode(Y, j, grid), time)
+
+#####
+##### Boundary conditions along particular coordinates
+#####
+
+"""
+    CoordinateBoundaryConditions(left, right)
+
+A set of two `BoundaryCondition`s to be applied along a coordinate x, y, or z.
+
+The `left` boundary condition is applied on the negative or lower side of the coordinate
+while the `right` boundary condition is applied on the positive or higher side.
+"""
+mutable struct CoordinateBoundaryConditions{L, R}
+     left :: L
+    right :: R
+end
+
+const CBC = CoordinateBoundaryConditions
+PeriodicBCs() = CBC(PeriodicBC(), PeriodicBC())
+
+# Here we overload setproperty! and getproperty to permit users to call
+# the 'left' and 'right' bcs in the z-direction 'bottom' and 'top'.
+# Note that 'right' technically corresponds to face point N+1.
+Base.setproperty!(cbc::CBC, side::Symbol, bc) = setbc!(cbc, Val(side), bc)
+setbc!(cbc::CBC, ::Val{S}, bc) where S = setfield!(cbc, S, bc)
+setbc!(cbc::CBC, ::Val{:bottom}, bc) = setfield!(cbc, :left, bc)
+setbc!(cbc::CBC, ::Val{:top}, bc) = setfield!(cbc, :right, bc)
+
+Base.getproperty(cbc::CBC, side::Symbol) = getbc(cbc, Val(side))
+getbc(cbc::CBC, ::Val{S}) where S = getfield(cbc, S)
+getbc(cbc::CBC, ::Val{:bottom}) = getfield(cbc, :left)
+    function ZBCFunction{X, Y}(func)
+        new{X, Y, typeof(func)}(func)
+    end
+end
+
+
 #####
 ##### Boundary conditions along particular coordinates
 #####

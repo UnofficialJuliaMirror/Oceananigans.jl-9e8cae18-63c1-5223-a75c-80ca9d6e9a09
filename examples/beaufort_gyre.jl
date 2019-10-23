@@ -3,8 +3,8 @@ using Oceananigans, PyPlot, Random, Printf
 using Oceananigans: Face, Cell
 
 # Resolution
-Nx = 128
-Ny = 128
+Nx = 64
+Ny = 64
 Nz = 64 
 
 # Domain size

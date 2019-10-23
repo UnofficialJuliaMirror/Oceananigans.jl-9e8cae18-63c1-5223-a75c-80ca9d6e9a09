@@ -8,7 +8,6 @@ Lx = 1000e3
 Ly = 1000e3
 Lz = 800
 
-τ₀ = 1e-4     # Kinematic wind stress magnitude
  f = 1e-4
  α = 0.0      # Thermal expansion coefficient
  β = 8e-4     # Haline contraction coefficient
@@ -16,13 +15,19 @@ Lz = 800
 surface_salinity = 10
  bottom_salinity = 20
 
+const τ₀ = 1e-4     # Kinematic wind stress magnitude
+const Δτ = 100e3     # Kinematic wind stress magnitude
+
 τˣ(x, y, t) = τ₀ * y/Δτ * exp(-y^2 / 2Δτ^2)
 τʸ(x, y, t) = τ₀ * x/Δτ * exp(-x^2 / 2Δτ^2)
 
-u_bcs = HorizontallyPeriodicBCs(top = BoundaryCondition(Flux, SimpleBoundaryForcing(τˣ)),
+@inline τˣ_kernel(i, j, grid, time, args...) = @inbounds τˣ(grid.xF[i], grid.yC[j], time)
+@inline τʸ_kernel(i, j, grid, time, args...) = @inbounds τʸ(grid.xC[i], grid.yF[j], time)
+
+u_bcs = HorizontallyPeriodicBCs(top = BoundaryCondition(Flux, τˣ_kernel),
                                 bottom = BoundaryCondition(Value, 0))
 
-v_bcs = HorizontallyPeriodicBCs(top = BoundaryCondition(Flux, SimpleBoundaryForcing(τʸ)),
+v_bcs = HorizontallyPeriodicBCs(top = BoundaryCondition(Flux, τʸ_kernel),
                                 bottom = BoundaryCondition(Value, 0))
 
 S_bcs = HorizontallyPeriodicBCs(   top = BoundaryCondition(Value, surface_salinity),

@@ -1,38 +1,39 @@
 using Oceananigans, PyPlot, Random, Printf
 
-#using Oceananigans.AbstractOperations
-#using Oceananigans: Face, Cell
+using Oceananigans: Face, Cell
 
+# Resolution
 Nx = 128
 Ny = 128
-Nz = 16 
+Nz = 64 
 
+# Domain size
 Lx = 1000e3
 Ly = 1000e3
 Lz = 800
 
-end_time = 30day
-
- f = 1e-4
+# Physical parameters
+ f = 1e-4     # Coriolis parameter
  α = 0.0      # Thermal expansion coefficient
  β = 8e-4     # Haline contraction coefficient
 
 surface_salinity = 10
  bottom_salinity = 20
 
-const τ₀ = 1e-4     # Kinematic wind stress magnitude
-const Δτ = 50e3     # Kinematic wind stress magnitude
+const τ₀ = 1e-5     # Wind stress magnitude
+const Δτ = 70e3     # Width of wind stress
 
+# Simulation end time
+end_time = 30day
+
+# Wind stress / velocity flux forcing functions
 @inline τˣ(x, y, t) = τ₀ * y/Δτ * exp(-(x^2 + y^2) / 2Δτ^2)
 @inline τʸ(x, y, t) = τ₀ * x/Δτ * exp(-(x^2 + y^2) / 2Δτ^2)
 
-@inline τˣ_kernel(i, j, grid, time, args...) = @inbounds τˣ(grid.xF[i], grid.yC[j], time)
-@inline τʸ_kernel(i, j, grid, time, args...) = @inbounds τʸ(grid.xC[i], grid.yF[j], time)
-
-u_bcs = HorizontallyPeriodicBCs(top = BoundaryCondition(Flux, τˣ_kernel),
+u_bcs = HorizontallyPeriodicBCs(   top = FunctionBoundaryCondition(Flux, :z, Face, Cell, τˣ),
                                 bottom = BoundaryCondition(Value, 0))
 
-v_bcs = HorizontallyPeriodicBCs(top = BoundaryCondition(Flux, τʸ_kernel),
+v_bcs = HorizontallyPeriodicBCs(   top = FunctionBoundaryCondition(Flux, :z, Cell, Face, τʸ),
                                 bottom = BoundaryCondition(Value, 0))
 
 S_bcs = HorizontallyPeriodicBCs(   top = BoundaryCondition(Value, surface_salinity),
@@ -43,17 +44,17 @@ model = Model(
                  grid = RegularCartesianGrid(size=(Nx, Ny, Nz), x=(-Lx/2, Lx/2), y=(-Ly/2, Ly/2), z=(-Lz, 0)),
              coriolis = FPlane(f=f),
              buoyancy = SeawaterBuoyancy(equation_of_state=LinearEquationOfState(α=α, β=β)),
-              closure = ConstantAnisotropicDiffusivity(νv=1e-2, νh=1000, κv=1e-2, κh=1000),
+              closure = ConstantAnisotropicDiffusivity(νv=1e-2, νh=10, κv=1e-2, κh=10),
   boundary_conditions = BoundaryConditions(u=u_bcs, v=v_bcs, S=S_bcs)
 )
 
-## Temperature initial condition: a stable density tradient with random noise superposed.
+# Initial condition
 h = 100
-initial_salinity(x, y, z) = surface_salinity * (exp(-z^2 / 2h^2) - exp(-Lz^2 / 2h^2)) + bottom_salinity
+initial_salinity(x, y, z) = (surface_salinity - bottom_salinity) * exp(-z^2 / 2h^2) + bottom_salinity
 
 set!(model, S=initial_salinity)
 
-wizard = TimeStepWizard(cfl=0.01, Δt=minute, max_change=1.1, max_Δt=4hour)
+wizard = TimeStepWizard(cfl=0.005, Δt=minute, max_change=1.1, max_Δt=20minute)
 
 # A diagnostic that returns the maximum absolute value of `w` by calling
 # `wmax(model)`:
@@ -87,8 +88,14 @@ while model.clock.time < end_time
             wmax(model), prettytime(walltime))
 
     sca(axs[1]); cla()
-    pcolormesh(xF_xy, yC_xy, interior(model.velocities.u)[:, :, Nz])
+    title("\$ u(x, y, z=0) \$")
+    imshow(interior(model.velocities.u)[:, :, Nz])
 
+    kplot = Nz - 2
     sca(axs[2]); cla()
-    pcolormesh(xC_xz, zC_xz, interior(model.tracers.S)[:, round(Int, Ny/2), :])
+    title("\$ w(x, y, z=$(model.grid.zF[kplot])")
+    imshow(interior(model.velocities.w)[:, :, kplot])
+    
+    axs[1].axes("off")
+    axs[2].axes("off")
 end

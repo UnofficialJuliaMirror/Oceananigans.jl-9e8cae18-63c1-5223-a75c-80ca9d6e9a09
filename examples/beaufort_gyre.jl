@@ -14,11 +14,9 @@ Lz = 800
 
 # Physical parameters
  f = 1e-4     # Coriolis parameter
- α = 0.0      # Thermal expansion coefficient
- β = 8e-4     # Haline contraction coefficient
-
-surface_salinity = 10
- bottom_salinity = 20
+N² = 1e-9     # Stratification in the "halocline"
+ h = 200      # Halocline depth / extent
+Δb = N² * h
 
 const τ₀ = 1e-5     # Wind stress magnitude
 const Δτ = 70e3     # Width of wind stress
@@ -36,23 +34,22 @@ u_bcs = HorizontallyPeriodicBCs(   top = FunctionBoundaryCondition(Flux, :z, Fac
 v_bcs = HorizontallyPeriodicBCs(   top = FunctionBoundaryCondition(Flux, :z, Cell, Face, τʸ),
                                 bottom = BoundaryCondition(Value, 0))
 
-S_bcs = HorizontallyPeriodicBCs(   top = BoundaryCondition(Value, surface_salinity),
-                                bottom = BoundaryCondition(Value, bottom_salinity))
+b_bcs = HorizontallyPeriodicBCs(   top = BoundaryCondition(Value, Δb),
+                                bottom = BoundaryCondition(Value, 0))
 
 model = Model(
          architecture = CPU(),
                  grid = RegularCartesianGrid(size=(Nx, Ny, Nz), x=(-Lx/2, Lx/2), y=(-Ly/2, Ly/2), z=(-Lz, 0)),
              coriolis = FPlane(f=f),
-             buoyancy = SeawaterBuoyancy(equation_of_state=LinearEquationOfState(α=α, β=β)),
+             buoyancy = BuoyancyTracer(),
+              tracers = :b,
               closure = ConstantAnisotropicDiffusivity(νv=1e-2, νh=10, κv=1e-2, κh=10),
-  boundary_conditions = BoundaryConditions(u=u_bcs, v=v_bcs, S=S_bcs)
+  boundary_conditions = BoundaryConditions(u=u_bcs, v=v_bcs, b=b_bcs)
 )
 
 # Initial condition
-h = 100
-initial_salinity(x, y, z) = (surface_salinity - bottom_salinity) * exp(-z^2 / 2h^2) + bottom_salinity
-
-set!(model, S=initial_salinity)
+b₀(x, y, z) = Δb * exp(z^2 / 2h^2)
+set!(model, b=b₀)
 
 wizard = TimeStepWizard(cfl=0.005, Δt=minute, max_change=1.1, max_Δt=20minute)
 
@@ -61,16 +58,28 @@ wizard = TimeStepWizard(cfl=0.005, Δt=minute, max_change=1.1, max_Δt=20minute)
 
 wmax = FieldMaximum(abs, model.velocities.w)
 
-# We also create a figure and define a plotting function for live plotting of results.
+# Set up output
+fields_to_output = merge(model.velocities, (b=model.tracers.b,))
+output_writer = JLD2OutputWriter(model, FieldOutputs(fields_to_output); interval=day, prefix="beaufort_gyre",
+                                 force=true)
 
+# Create a figure
 fig, axs = subplots(ncols=2, figsize=(12, 6))
 
-xF_xy = repeat(model.grid.xF[2:end], 1, model.grid.Ny)
-yC_xy = repeat(reshape(model.grid.yC, 1, model.grid.Ny), model.grid.Nx, 1)
+function makeplot!(axs, model)
+    sca(axs[1]); cla()
+    title("\$ u(x, y, z=0) \$")
+    imshow(interior(model.velocities.u)[:, :, Nz])
 
-xC_xz = repeat(model.grid.xC, 1, model.grid.Nz)
-zF_xz = repeat(reshape(model.grid.zF[2:end], 1, model.grid.Nz), model.grid.Nx, 1)
-zC_xz = repeat(reshape(model.grid.zC, 1, model.grid.Nz), model.grid.Nx, 1)
+    kplot = Nz - 2
+    sca(axs[2]); cla()
+    title("\$ w(x, y, z=$(model.grid.zF[kplot]))")
+    imshow(interior(model.velocities.w)[:, :, kplot])
+    
+    [ax.tick_params(left=false, labelleft=false, bottom=false, labelbottom=false) for ax in axs]
+
+    return nothing
+end
 
 # Finally, we run the the model in a `while` loop.
 
@@ -87,15 +96,5 @@ while model.clock.time < end_time
             model.clock.iteration, prettytime(model.clock.time), prettytime(wizard.Δt),
             wmax(model), prettytime(walltime))
 
-    sca(axs[1]); cla()
-    title("\$ u(x, y, z=0) \$")
-    imshow(interior(model.velocities.u)[:, :, Nz])
-
-    kplot = Nz - 2
-    sca(axs[2]); cla()
-    title("\$ w(x, y, z=$(model.grid.zF[kplot])")
-    imshow(interior(model.velocities.w)[:, :, kplot])
-    
-    axs[1].axes("off")
-    axs[2].axes("off")
+    model.architecture == CPU() && makeplot!(axs, model)
 end

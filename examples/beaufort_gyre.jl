@@ -1,4 +1,6 @@
-using Oceananigans, PyPlot, Random, Printf
+using Oceananigans, PyPlot, Random, Printf, Oceananigans.AbstractOperations
+
+using Oceananigans: Face, Cell
 
 Nx = 64 
 Ny = 64 
@@ -7,6 +9,8 @@ Nz = 32
 Lx = 1000e3
 Ly = 1000e3
 Lz = 800
+
+end_time = 30day
 
  f = 1e-4
  α = 0.0      # Thermal expansion coefficient
@@ -18,8 +22,11 @@ surface_salinity = 10
 const τ₀ = 1e-4     # Kinematic wind stress magnitude
 const Δτ = 100e3     # Kinematic wind stress magnitude
 
-τˣ(x, y, t) = τ₀ * y/Δτ * exp(-y^2 / 2Δτ^2)
-τʸ(x, y, t) = τ₀ * x/Δτ * exp(-x^2 / 2Δτ^2)
+#τˣ = BoundaryConditionFunction{:z, Face, Cell}((x, y, t) -> τ₀ * y/Δτ * exp(-y^2 / 2Δτ^2))
+#τʸ = BoundaryConditionFunction{:z, Cell, Face}((x, y, t) -> τ₀ * x/Δτ * exp(-x^2 / 2Δτ^2))
+
+@inline τˣ(x, y, t) = τ₀ * y/Δτ * exp(-y^2 / 2Δτ^2)
+@inline τʸ(x, y, t) = τ₀ * x/Δτ * exp(-x^2 / 2Δτ^2)
 
 @inline τˣ_kernel(i, j, grid, time, args...) = @inbounds τˣ(grid.xF[i], grid.yC[j], time)
 @inline τʸ_kernel(i, j, grid, time, args...) = @inbounds τʸ(grid.xC[i], grid.yF[j], time)
@@ -48,7 +55,7 @@ initial_salinity(x, y, z) = bottom_salinity + (surface_salinity - bottom_salinit
 
 set!(model, S=initial_salinity)
 
-wizard = TimeStepWizard(cfl=0.2, Δt=minute, max_change=1.1, max_Δt=5.0)
+wizard = TimeStepWizard(cfl=0.2, Δt=minute, max_change=1.1, max_Δt=1hour)
 
 # A diagnostic that returns the maximum absolute value of `w` by calling
 # `wmax(model)`:
@@ -57,8 +64,17 @@ wmax = FieldMaximum(abs, model.velocities.w)
 
 # We also create a figure and define a plotting function for live plotting of results.
 
-fig, axs = subplots(ncols=3, figsize=(12, 5))
+fig, axs = subplots()
 
+function xyslice(a) 
+    xC = repeat(model.grid.xC, 1, model.grid.Ny)
+    yC = repeat(reshape(model.grid.yC, 1, model.grid.Ny), model.grid.Nx, 1)
+    pcolormesh(xC, zC, data(a)[:, :, model.grid.Nz])
+    return nothing
+end
+
+u, v, w = model.velocities
+kinetic_energy = Computation(@at (Cell, Cell, Cell) u^2 + v^2, model)
 
 """
     makeplot!(axs, model)
@@ -67,39 +83,15 @@ Make a triptych of x-z slices of vertical velocity, temperature, and salinity
 associated with `model` in `axs`.
 """
 function makeplot!(axs, model)
-    jhalf = floor(Int, model.grid.Nz/2)
+    ke = kinetic_energy(model)
+    xC = repeat(model.grid.xC, 1, model.grid.Ny)
+    yC = repeat(reshape(model.grid.yC, 1, model.grid.Ny), model.grid.Nx, 1)
 
-    kinetic_energy_slice(u, v) = @. @views (u[:, jhalf, :]^2 + v[:, jhalf, :]^2) / 2
-
-    ## Coordinate arrays for plotting
-    xC = repeat(model.grid.xC, 1, model.grid.Nz)
-    zF = repeat(reshape(model.grid.zF[1:end-1], 1, model.grid.Nz), model.grid.Nx, 1)
-    zC = repeat(reshape(model.grid.zC, 1, model.grid.Nz), model.grid.Nx, 1)
-
-    u, v, w = model.velocities
-    T, S = model.tracers
-
-    sca(axs[2]); cla()
-    title("Kinetic energy")
-    pcolormesh(xC, zC, kinetic_energy_slice(data(u), data(v)))
-    xlabel("\$ x \$ (m)")
-
-    sca(axs[2]); cla()
-    title("Vertical velocity")
-    pcolormesh(xC, zF, data(w)[:, jhalf, :])
-    xlabel("\$ x \$ (m)"); ylabel("\$ z \$ (m)")
-
-    sca(axs[3]); cla()
-    title("Salinity")
-    pcolormesh(xC, zC, data(S)[:, jhalf, :])
-    xlabel("\$ x \$ (m)")
-
-    [ax.set_aspect(1) for ax in axs]
-    pause(0.01)
+    pcolormesh(xC, zC, data(ke)[:, :, model.grid.Nz])
 
     return nothing
 end
-
+   
 # Finally, we run the the model in a `while` loop.
 
 while model.clock.time < end_time

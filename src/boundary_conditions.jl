@@ -118,6 +118,41 @@ getbc(bc::BC{C, <:Function}, args...)            where C = bc.condition(args...)
 
 Base.getindex(bc::BC{C, <:AbstractArray}, inds...) where C = getindex(bc.condition, inds...)
 
+
+#####
+##### Wrapper for user-defined boundary condition functions
+#####
+
+"""
+    BoundaryConditionFunction{B, X1, X2, F}
+
+A wrapper for user-defined boundary condition functions.
+"""
+struct BoundaryConditionFunction{B, X, Y, F} <: Function
+    func :: F
+
+    """
+        BoundaryConditionFunction{B, X1, X2}(func)
+
+    A wrapper for user-defined boundary condition functions on the 
+    boundary specified by symbol `B` and at location `(X1, X2)`.
+    """
+    function BoundaryConditionFunction{B, X1, X2}(func) where {B, X1, X2}
+        B ∈ (:x, :y, :z) || throw(ArgumentError("The boundary B at which the BoundaryConditionFunction is
+                                                to be applied must be either :x, :y, or :z."))
+        new{B, X1, X2, typeof(func)}(func)
+    end
+end
+
+@inline (bc::BoundaryConditionFunction{:x, Y, Z})(j, k, grid, time, args...) where {Y, Z} = 
+    bc.func(ynode(Y, j, grid), znode(Z, k, grid), time)
+
+@inline (bc::BoundaryConditionFunction{:y, X, Z})(i, k, grid, time, args...) where {X, Z} = 
+    bc.func(xnode(X, i, grid), znode(Z, k, grid), time)
+
+@inline (bc::BoundaryConditionFunction{:z, X, Y})(i, j, grid, time, args...) where {X, Y} = 
+    bc.func(xnode(X, i, grid), ynode(Y, j, grid), time)
+
 #####
 ##### Boundary conditions along particular coordinates
 #####
@@ -149,7 +184,6 @@ setbc!(cbc::CBC, ::Val{:top}, bc) = setfield!(cbc, :right, bc)
 Base.getproperty(cbc::CBC, side::Symbol) = getbc(cbc, Val(side))
 getbc(cbc::CBC, ::Val{S}) where S = getfield(cbc, S)
 getbc(cbc::CBC, ::Val{:bottom}) = getfield(cbc, :left)
-getbc(cbc::CBC, ::Val{:top}) = getfield(cbc, :right)
 
 #####
 ##### Boundary conditions for Fields

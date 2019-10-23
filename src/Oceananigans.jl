@@ -30,7 +30,7 @@ export
     BuoyancyTracer, SeawaterBuoyancy, LinearEquationOfState,
 
     # Boundary conditions
-    BoundaryCondition,
+    BoundaryCondition, BoundaryConditionFunction,
     Periodic, Flux, Gradient, Value, Dirchlet, Neumann,
     CoordinateBoundaryConditions,
     FieldBoundaryConditions, HorizontallyPeriodicBCs, ChannelBCs,

@@ -1,10 +1,11 @@
-using Oceananigans, PyPlot, Random, Printf, Oceananigans.AbstractOperations
+using Oceananigans, PyPlot, Random, Printf
 
-using Oceananigans: Face, Cell
+#using Oceananigans.AbstractOperations
+#using Oceananigans: Face, Cell
 
-Nx = 64 
-Ny = 64 
-Nz = 32 
+Nx = 128
+Ny = 128
+Nz = 16 
 
 Lx = 1000e3
 Ly = 1000e3
@@ -20,13 +21,10 @@ surface_salinity = 10
  bottom_salinity = 20
 
 const τ₀ = 1e-4     # Kinematic wind stress magnitude
-const Δτ = 100e3     # Kinematic wind stress magnitude
+const Δτ = 50e3     # Kinematic wind stress magnitude
 
-#τˣ = BoundaryConditionFunction{:z, Face, Cell}((x, y, t) -> τ₀ * y/Δτ * exp(-y^2 / 2Δτ^2))
-#τʸ = BoundaryConditionFunction{:z, Cell, Face}((x, y, t) -> τ₀ * x/Δτ * exp(-x^2 / 2Δτ^2))
-
-@inline τˣ(x, y, t) = τ₀ * y/Δτ * exp(-y^2 / 2Δτ^2)
-@inline τʸ(x, y, t) = τ₀ * x/Δτ * exp(-x^2 / 2Δτ^2)
+@inline τˣ(x, y, t) = τ₀ * y/Δτ * exp(-(x^2 + y^2) / 2Δτ^2)
+@inline τʸ(x, y, t) = τ₀ * x/Δτ * exp(-(x^2 + y^2) / 2Δτ^2)
 
 @inline τˣ_kernel(i, j, grid, time, args...) = @inbounds τˣ(grid.xF[i], grid.yC[j], time)
 @inline τʸ_kernel(i, j, grid, time, args...) = @inbounds τʸ(grid.xC[i], grid.yF[j], time)
@@ -42,20 +40,20 @@ S_bcs = HorizontallyPeriodicBCs(   top = BoundaryCondition(Value, surface_salini
 
 model = Model(
          architecture = CPU(),
-                 grid = RegularCartesianGrid(size=(Nz, Nz, Nz), length=(Lx, Ly, Lz)),
+                 grid = RegularCartesianGrid(size=(Nx, Ny, Nz), x=(-Lx/2, Lx/2), y=(-Ly/2, Ly/2), z=(-Lz, 0)),
              coriolis = FPlane(f=f),
              buoyancy = SeawaterBuoyancy(equation_of_state=LinearEquationOfState(α=α, β=β)),
-              closure = ConstantAnisotropicDiffusivity(νv=1e-4, νh=1e-2, κv=1e-4, κh=1e-2),
+              closure = ConstantAnisotropicDiffusivity(νv=1e-2, νh=1000, κv=1e-2, κh=1000),
   boundary_conditions = BoundaryConditions(u=u_bcs, v=v_bcs, S=S_bcs)
 )
 
 ## Temperature initial condition: a stable density tradient with random noise superposed.
-smooth_step(x, Δ) = (tanh(x/Δ) + 1) / 2
-initial_salinity(x, y, z) = bottom_salinity + (surface_salinity - bottom_salinity) * smooth_step(z+100, 20)
+h = 100
+initial_salinity(x, y, z) = surface_salinity * (exp(-z^2 / 2h^2) - exp(-Lz^2 / 2h^2)) + bottom_salinity
 
 set!(model, S=initial_salinity)
 
-wizard = TimeStepWizard(cfl=0.2, Δt=minute, max_change=1.1, max_Δt=1hour)
+wizard = TimeStepWizard(cfl=0.01, Δt=minute, max_change=1.1, max_Δt=4hour)
 
 # A diagnostic that returns the maximum absolute value of `w` by calling
 # `wmax(model)`:
@@ -64,34 +62,15 @@ wmax = FieldMaximum(abs, model.velocities.w)
 
 # We also create a figure and define a plotting function for live plotting of results.
 
-fig, axs = subplots()
+fig, axs = subplots(ncols=2, figsize=(12, 6))
 
-function xyslice(a) 
-    xC = repeat(model.grid.xC, 1, model.grid.Ny)
-    yC = repeat(reshape(model.grid.yC, 1, model.grid.Ny), model.grid.Nx, 1)
-    pcolormesh(xC, zC, data(a)[:, :, model.grid.Nz])
-    return nothing
-end
+xF_xy = repeat(model.grid.xF[2:end], 1, model.grid.Ny)
+yC_xy = repeat(reshape(model.grid.yC, 1, model.grid.Ny), model.grid.Nx, 1)
 
-u, v, w = model.velocities
-kinetic_energy = Computation(@at (Cell, Cell, Cell) u^2 + v^2, model)
+xC_xz = repeat(model.grid.xC, 1, model.grid.Nz)
+zF_xz = repeat(reshape(model.grid.zF[2:end], 1, model.grid.Nz), model.grid.Nx, 1)
+zC_xz = repeat(reshape(model.grid.zC, 1, model.grid.Nz), model.grid.Nx, 1)
 
-"""
-    makeplot!(axs, model)
-
-Make a triptych of x-z slices of vertical velocity, temperature, and salinity
-associated with `model` in `axs`.
-"""
-function makeplot!(axs, model)
-    ke = kinetic_energy(model)
-    xC = repeat(model.grid.xC, 1, model.grid.Ny)
-    yC = repeat(reshape(model.grid.yC, 1, model.grid.Ny), model.grid.Nx, 1)
-
-    pcolormesh(xC, zC, data(ke)[:, :, model.grid.Nz])
-
-    return nothing
-end
-   
 # Finally, we run the the model in a `while` loop.
 
 while model.clock.time < end_time
@@ -107,5 +86,9 @@ while model.clock.time < end_time
             model.clock.iteration, prettytime(model.clock.time), prettytime(wizard.Δt),
             wmax(model), prettytime(walltime))
 
-    model.architecture == CPU() && makeplot!(axs, model)
+    sca(axs[1]); cla()
+    pcolormesh(xF_xy, yC_xy, interior(model.velocities.u)[:, :, Nz])
+
+    sca(axs[2]); cla()
+    pcolormesh(xC_xz, zC_xz, interior(model.tracers.S)[:, round(Int, Ny/2), :])
 end

@@ -14,12 +14,12 @@ Lz = 800
 
 # Physical parameters
  f = 1e-4     # Coriolis parameter
-N² = 1e-9     # Stratification in the "halocline"
+N² = 1e-8     # Stratification in the "halocline"
  h = 200      # Halocline depth / extent
 Δb = N² * h
 
-const τ₀ = 1e-5     # Wind stress magnitude
-const Δτ = 70e3     # Width of wind stress
+const τ₀ = -1e-5    # Wind stress magnitude
+const Δτ = 80e3     # Width of wind stress
 
 # Simulation end time
 end_time = 30day
@@ -43,7 +43,7 @@ model = Model(
              coriolis = FPlane(f=f),
              buoyancy = BuoyancyTracer(),
               tracers = :b,
-              closure = ConstantAnisotropicDiffusivity(νv=1e-2, νh=10, κv=1e-2, κh=10),
+              closure = ConstantAnisotropicDiffusivity(νv=1e-1, νh=1, κv=1e-1, κh=1),
   boundary_conditions = BoundaryConditions(u=u_bcs, v=v_bcs, b=b_bcs)
 )
 
@@ -51,7 +51,7 @@ model = Model(
 b₀(x, y, z) = Δb * exp(z^2 / 2h^2)
 set!(model, b=b₀)
 
-wizard = TimeStepWizard(cfl=0.005, Δt=minute, max_change=1.1, max_Δt=20minute)
+wizard = TimeStepWizard(cfl=0.005, Δt=minute, max_change=1.1, max_Δt=5minute)
 
 # A diagnostic that returns the maximum absolute value of `w` by calling
 # `wmax(model)`:
@@ -66,7 +66,10 @@ output_writer = JLD2OutputWriter(model, FieldOutputs(fields_to_output); interval
 # Create a figure
 fig, axs = subplots(ncols=2, figsize=(12, 6))
 
-function makeplot!(axs, model)
+function makeplot!(fig, axs, model)
+
+    fig.suptitle("\$ t = \$ $(prettytime(model.clock.time))")
+
     sca(axs[1]); cla()
     title("\$ u(x, y, z=0) \$")
     imshow(interior(model.velocities.u)[:, :, Nz])
@@ -96,5 +99,5 @@ while model.clock.time < end_time
             model.clock.iteration, prettytime(model.clock.time), prettytime(wizard.Δt),
             wmax(model), prettytime(walltime))
 
-    model.architecture == CPU() && makeplot!(axs, model)
+    model.architecture == CPU() && makeplot!(fig, axs, model)
 end

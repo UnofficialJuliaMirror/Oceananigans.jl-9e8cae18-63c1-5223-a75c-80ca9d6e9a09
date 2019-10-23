@@ -184,11 +184,6 @@ setbc!(cbc::CBC, ::Val{:top}, bc) = setfield!(cbc, :right, bc)
 Base.getproperty(cbc::CBC, side::Symbol) = getbc(cbc, Val(side))
 getbc(cbc::CBC, ::Val{S}) where S = getfield(cbc, S)
 getbc(cbc::CBC, ::Val{:bottom}) = getfield(cbc, :left)
-    function ZBCFunction{X, Y}(func)
-        new{X, Y, typeof(func)}(func)
-    end
-end
-
 
 #####
 ##### Boundary conditions along particular coordinates

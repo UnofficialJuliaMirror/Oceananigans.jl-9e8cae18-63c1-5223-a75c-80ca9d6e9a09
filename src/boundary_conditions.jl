@@ -184,6 +184,7 @@ setbc!(cbc::CBC, ::Val{:top}, bc) = setfield!(cbc, :right, bc)
 Base.getproperty(cbc::CBC, side::Symbol) = getbc(cbc, Val(side))
 getbc(cbc::CBC, ::Val{S}) where S = getfield(cbc, S)
 getbc(cbc::CBC, ::Val{:bottom}) = getfield(cbc, :left)
+getbc(cbc::CBC, ::Val{:top}) = getfield(cbc, :right)
 
 #####
 ##### Boundary conditions for Fields

@@ -154,14 +154,19 @@ end
     bc.func(xnode(X, i, grid), ynode(Y, j, grid), time)
 
 """
-    FunctionBoundaryCondition{B, X1, X2}(BCType, func)
+    FunctionBoundaryCondition(BCType, boundary, X1, X2, func)
 
-Create a boundary condition of type `BCType` that applies `func` on the 
-boundary `B` and at locations `(X1, X2)`, where `func(x1, x2, t)` is a 
-three-argument function of space and time defined along the boundary `B`.
+Create a boundary condition of type `BCType` that applies `func` on
+`boundary` and at locations `(X1, X2)`, where `boundary` is either
+`:x`, `:y`, or `:z`. The function `func(x1, x2, t)` is a 
+three-argument function of space and time defined along `boundary`.
+
+Example
+=======
+julia> boundary_condition = FunctionBoundaryCondition(Flux, :z, Cell, Cell, (x, y, t) -> sin(x) * cos(t))
 """
-FunctionBoundaryCondition{B, X1, X2}(C, func) where {B, X1, X1} =
-    BoundaryCondition(C, BoundaryFunction{B, X1, X2}(func))
+FunctionBoundaryCondition(BCType, B, X1, X2, func) =
+    BoundaryCondition(BCType, BoundaryFunction{B, X1, X2}(func))
 
 #####
 ##### Boundary conditions along particular coordinates

@@ -7,18 +7,19 @@ using Oceananigans, PyPlot, Printf
 
 # ## Numerical, domain, and internal wave parameters
 #
-# First, we pick some numerical and physical parameters for our model
-# and its rotation rate.
+# First, we pick some numerical and physical parameters for our model:
 
 Nx = 128 # resolution
 Lx = 2π  # domain extent
 
 # We set up an internal wave with the pressure field
 #
-# $$ p(x, y, z, t) = a(x, z) cos(kx + mz - \omega t) $$ .
+# $$ p(x, y, z, t) = a(x, z) \cos(kx + mz - \omega t) $$ .
 #
 # where `m` is the vertical wavenumber, `k` is the horizontal wavenumber,
-# `ω` is the wave frequncy, and `a(x, z)` is a Gaussian envelope.
+# `ω` is the wave frequncy, and `a(x, z)` is a Gaussian envelope. 
+# In addition, we set the background buoyancy frequency, `N`, and the 
+# inertial frequency, `f`.
 
 ## Non-dimensional internal wave parameters
 m = 16      # vertical wavenumber
@@ -44,7 +45,7 @@ V = k * f   / (ω^2 - f^2)
 W = m * ω   / (ω^2 - N^2)
 B = m * N^2 / (ω^2 - N^2)
 
-# Finally, we set-up a small-amplitude, Gaussian envelope for the wave packet
+# Finally, we set-up a small-amplitude, Gaussian envelope for the wave packet,
 
 ## Some Gaussian parameters
 A, x₀, z₀, δ = 1e-9, Lx/2, -Lx/2, Lx/15
@@ -52,7 +53,7 @@ A, x₀, z₀, δ = 1e-9, Lx/2, -Lx/2, Lx/15
 ## A Gaussian envelope
 a(x, z) = A * exp( -( (x - x₀)^2 + (z - z₀)^2 ) / 2δ^2 )
 
-# Create initial condition functions
+# and use it to define initial condition functions:
 u₀(x, y, z) = a(x, z) * U * cos(k*x + m*z)
 v₀(x, y, z) = a(x, z) * V * sin(k*x + m*z)
 w₀(x, y, z) = a(x, z) * W * cos(k*x + m*z)
@@ -85,7 +86,7 @@ xplot(u) = repeat(dropdims(xnodes(u), dims=2), 1, u.grid.Nz)
 zplot(u) = repeat(dropdims(znodes(u), dims=2), u.grid.Nx, 1)
 
 function plot_field!(ax, w, t) 
-    pcolormesh(xplot(w), zplot(w), interior(model.velocities.w)[:, 1, :])
+    pcolormesh(xplot(w), zplot(w), model.velocities.w[:, 1, :])
     xlabel(L"x")
     ylabel(L"z")
     title(@sprintf("\$ \\omega t / 2 \\pi = %.2f\$", t*ω/2π))

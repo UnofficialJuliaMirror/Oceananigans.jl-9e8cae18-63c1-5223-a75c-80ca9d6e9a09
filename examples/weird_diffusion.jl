@@ -14,37 +14,47 @@
 # To use `Oceananigans.jl` after it has been installed, we bring
 # `Oceananigans.jl` functions and names into our 'namespace' by writing
 
-using Oceananigans
-
-# We also use `PyPlot.jl` for plotting and `Printf` to format plot legends:
-
-using PyPlot, Printf
+using Oceananigans, Oceananigans.AbstractOperations, PyPlot, Printf
+using Oceananigans: Face, Cell
 
 # ## Instantiating and configuring a `Model`
 #
-# To begin using Oceananigans, we instantiate a `Model` by calling the
+# To begin using Oceananigans, we instantiate a `Model` by calling the 
 # `Model` constructor:
+grid = RegularCartesianGrid((1, 1, 128), (1, 1, 1))
+
+tracer_names = (:b,)
+tracers = Oceananigans.TracerFields(CPU(), grid, tracer_names)
+b = tracers.b
+
+weird_diffusivity = @at (Cell, Cell, Cell) ∂z( (tanh(∂z(b) / 0.1) + 1) / 2 * ∂z(b))
+
+buoyancy_bcs = HorizontallyPeriodicBCs(top = BoundaryCondition(Flux, 0.1))
 
 model = Model(
-    grid = RegularCartesianGrid(size = (1, 1, 128), length = (1, 1, 1)),
-    closure = ConstantIsotropicDiffusivity(κ = 1.0)
+    grid = grid,
+    closure = ConstantIsotropicDiffusivity(κ = 0.1),
+    tracers = tracers,
+    buoyancy = nothing,
+    forcing = ModelForcing(b=OperationForcing(weird_diffusivity)),
+    boundary_conditions = BoundaryConditions(b=buoyancy_bcs)
 )
 
-# The keyword arguments `grid` and `closure` indicate that
+# The keyword arguments `grid` and `closure` indicate that 
 # our model grid is Cartesian with uniform grid spacing, that our diffusive
-# stress and tracer fluxes are determined by diffusion with a constant
+# stress and tracer fluxes are determined by diffusion with a constant 
 # diffusivity `κ` (note that we do not use viscosity in this example).
 
 # Note that by default, a `Model` has no-flux boundary condition on all
-# variables. Next, we set an initial condition on our "passive tracer",
+# variables. Next, we set an initial condition on our "passive tracer", 
 # temperature. Our objective is to observe the diffusion of a Gaussian.
 
 ## Build a Gaussian initial condition function with width `δ`:
 δ = 0.1
-Tᵢ(x, y, z) = exp( -(z + 0.5)^2 / (2δ^2) )
+bᵢ(x, y, z) = exp( -(z + 0.5)^2 / (2δ^2) )
 
 ## Set `model.tracers.T` to the function `Tᵢ`:
-set!(model, T=Tᵢ)
+set!(model, b=bᵢ)
 
 # ## Running your first `Model`
 #
@@ -52,7 +62,7 @@ set!(model, T=Tᵢ)
 # `time_step!`, with a time-step size that ensures numerical stability.
 
 ## Time-scale for diffusion across a grid cell
-cell_diffusion_time_scale = model.grid.Δz^2 / model.closure.κ.T
+cell_diffusion_time_scale = model.grid.Δz^2 / 1.0
 
 ## The function `time_step!` executes `Nt` time steps with step size `Δt`
 ## using a second-order Adams-Bashforth method
@@ -73,19 +83,17 @@ xlabel("Tracer concentration")
 ylabel(L"z")
 
 ## Plot initial condition
-plot(Tᵢ.(0, 0, model.grid.zC), model.grid.zC, "--", label=L"t=0")
+plot(bᵢ.(0, 0, model.grid.zC), model.grid.zC, "--", label=L"t=0")
 
 ## Plot current solution
-plot(model.tracers.T[1, 1, :], model.grid.zC, label=tracer_label(model))
+plot(model.tracers.b[1, 1, :], model.grid.zC, label=tracer_label(model))
 legend()
-gcf()
 
 # Interesting! Running the model even longer makes even more interesting results.
 
 for i = 1:3
-    time_step!(model, Nt = 1000, Δt = 0.1 * cell_diffusion_time_scale)
-    plot(model.tracers.T[1, 1, :], model.grid.zC, label=tracer_label(model))
+    time_step!(model, Nt = 1000, Δt = 0.001 * cell_diffusion_time_scale)
+    plot(model.tracers.b[1, 1, :], model.grid.zC, label=tracer_label(model))
 end
 
 legend()
-gcf()

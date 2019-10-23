@@ -69,7 +69,7 @@ for i = 1:10
     compute!(vorticity_computation)
 
     cla()
-    imshow(interior(ω)[:, :, 1])
+    imshow(ω[:, :, 1])
     ax.axis("off")
     pause(0.1)
 end

@@ -124,34 +124,44 @@ Base.getindex(bc::BC{C, <:AbstractArray}, inds...) where C = getindex(bc.conditi
 #####
 
 """
-    BoundaryConditionFunction{B, X1, X2, F}
+    BoundaryFunction{B, X1, X2, F}
 
 A wrapper for user-defined boundary condition functions.
 """
-struct BoundaryConditionFunction{B, X, Y, F} <: Function
+struct BoundaryFunction{B, X, Y, F} <: Function
     func :: F
 
     """
-        BoundaryConditionFunction{B, X1, X2}(func)
+        BoundaryFunction{B, X1, X2}(func)
 
     A wrapper for user-defined boundary condition functions on the 
     boundary specified by symbol `B` and at location `(X1, X2)`.
     """
-    function BoundaryConditionFunction{B, X1, X2}(func) where {B, X1, X2}
-        B ∈ (:x, :y, :z) || throw(ArgumentError("The boundary B at which the BoundaryConditionFunction is
+    function BoundaryFunction{B, X1, X2}(func) where {B, X1, X2}
+        B ∈ (:x, :y, :z) || throw(ArgumentError("The boundary B at which the BoundaryFunction is
                                                 to be applied must be either :x, :y, or :z."))
         new{B, X1, X2, typeof(func)}(func)
     end
 end
 
-@inline (bc::BoundaryConditionFunction{:x, Y, Z})(j, k, grid, time, args...) where {Y, Z} = 
+@inline (bc::BoundaryFunction{:x, Y, Z})(j, k, grid, time, args...) where {Y, Z} = 
     bc.func(ynode(Y, j, grid), znode(Z, k, grid), time)
 
-@inline (bc::BoundaryConditionFunction{:y, X, Z})(i, k, grid, time, args...) where {X, Z} = 
+@inline (bc::BoundaryFunction{:y, X, Z})(i, k, grid, time, args...) where {X, Z} = 
     bc.func(xnode(X, i, grid), znode(Z, k, grid), time)
 
-@inline (bc::BoundaryConditionFunction{:z, X, Y})(i, j, grid, time, args...) where {X, Y} = 
+@inline (bc::BoundaryFunction{:z, X, Y})(i, j, grid, time, args...) where {X, Y} = 
     bc.func(xnode(X, i, grid), ynode(Y, j, grid), time)
+
+"""
+    FunctionBoundaryCondition{B, X1, X2}(BCType, func)
+
+Create a boundary condition of type `BCType` that applies `func` on the 
+boundary `B` and at locations `(X1, X2)`, where `func(x1, x2, t)` is a 
+three-argument function of space and time defined along the boundary `B`.
+"""
+FunctionBoundaryCondition{B, X1, X2}(C, func) where {B, X1, X1} =
+    BoundaryCondition(C, BoundaryFunction{B, X1, X2}(func))
 
 #####
 ##### Boundary conditions along particular coordinates

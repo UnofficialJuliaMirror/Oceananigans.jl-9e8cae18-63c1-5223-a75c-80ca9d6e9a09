@@ -25,7 +25,7 @@ struct BinaryOperation{X, Y, Z, O, A, B, IA, IB, IΩ, G} <: AbstractOperation{X,
     end
 end
 
-"""Create a binary operation for `op` actin on `a` and `b` with locations `La` and `Lb`.
+"""Create a binary operation for `op` acting on `a` and `b` with locations `La` and `Lb`.
 The operator acts at `Lab` and the result is interpolated to `Lc`."""
 function _binary_operation(Lc, op, a, b, La, Lb, Lab, grid)
      ▶a = interpolation_operator(La, Lab)
@@ -127,8 +127,8 @@ macro binary(ops...)
         push!(expr.args, :($(esc(defexpr))))
 
         add_to_operator_lists = quote
-            Oceananigans.AbstractOperations.uniquepush!(Oceananigans.AbstractOperations.operators, Symbol($op))
-            Oceananigans.AbstractOperations.uniquepush!(Oceananigans.AbstractOperations.binary_operators, Symbol($op))
+            push!(Oceananigans.AbstractOperations.operators, Symbol($op))
+            push!(Oceananigans.AbstractOperations.binary_operators, Symbol($op))
         end
 
         push!(expr.args, :($(esc(add_to_operator_lists))))
@@ -137,7 +137,7 @@ macro binary(ops...)
     return expr
 end
 
-const binary_operators = []
+const binary_operators = Set()
 
 "Adapt `BinaryOperation` to work on the GPU via CUDAnative and CUDAdrv."
 Adapt.adapt_structure(to, binary::BinaryOperation{X, Y, Z}) where {X, Y, Z} =

@@ -1,6 +1,8 @@
 module AbstractOperations
 
-export ∂x, ∂y, ∂z, @at, Computation, compute!, @unary, @binary, @polynary
+export ∂x, ∂y, ∂z, @at, Computation, compute!, @unary, @binary, @multiary
+
+import Base: identity
 
 using Base: @propagate_inbounds
 
@@ -31,27 +33,21 @@ using GPUifyLoops: @launch, @loop
 ##### Basic functionality
 #####
 
+"""
+    AbstractOperation{X, Y, Z, G} <: AbstractLocatedField{X, Y, Z, Nothing, G} end
+
+Represents an operation performed on grid of type `G` at locations `X`, `Y`, and `Z`.
+"""
 abstract type AbstractOperation{X, Y, Z, G} <: AbstractLocatedField{X, Y, Z, Nothing, G} end
 
 const ALF = AbstractLocatedField
 
+# We (informally) require that all field-like objects define `data` and `parent`:
 data(op::AbstractOperation) = op
 Base.parent(op::AbstractOperation) = op
 
-"""
-    uniquepush!(collection, items...)
-
-Push each item in `items` into `collection` if it is not already there.
-"""
-function uniquepush!(collection, items...)
-    for item in items
-        !(item ∈ collection) && push!(collection, item)
-    end
-    return collection
-end
-
 # AbstractOperation macros add their associated functions to this list
-const operators = []
+const operators = Set()
 
 include("function_fields.jl")
 include("interpolation_utils.jl")
@@ -59,7 +55,7 @@ include("grid_validation.jl")
 
 include("unary_operations.jl")
 include("binary_operations.jl")
-include("polynary_operations.jl")
+include("multiary_operations.jl")
 include("derivatives.jl")
 
 include("computations.jl")
@@ -78,9 +74,9 @@ import Base: sqrt, sin, cos, exp, tanh, -, +, /, ^, *
 @binary / 
 @binary ^
 
-@polynary + 
+@multiary + 
 
-# For unknown reasons, the operator definition macros @binary and @polynary fail to work 
+# For unknown reasons, the operator definition macros @binary and @multiary fail to work 
 # properly for :*. We thus manually define :* for fields.
 import Base: *
 
@@ -88,8 +84,8 @@ eval(define_binary_operator(:*))
 push!(operators, :*)
 push!(binary_operators, :*)
 
-eval(define_polynary_operator(:*))
+eval(define_multiary_operator(:*))
 push!(operators, :*)
-push!(polynary_operators, :*)
+push!(multiary_operators, :*)
 
 end # module

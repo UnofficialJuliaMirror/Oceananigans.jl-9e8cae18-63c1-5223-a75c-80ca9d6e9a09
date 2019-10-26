@@ -105,6 +105,7 @@ include("velocity_tracer_gradients.jl")
 
 include("constant_isotropic_diffusivity.jl")
 include("constant_anisotropic_diffusivity.jl")
+include("biharmonic_diffusivity.jl")
 include("smagorinsky.jl")
 include("verstappen_anisotropic_minimum_dissipation.jl")
 include("rozema_anisotropic_minimum_dissipation.jl")

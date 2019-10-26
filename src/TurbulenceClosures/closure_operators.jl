@@ -127,14 +127,39 @@ located at `aaf` in `z`, across `aac`.
 ##### Double differentiation
 #####
 
-@inline ∂x²_caa(i, j, k, grid, c) = ∂x_caa(i, j, k, grid, ∂x_faa, c)
-@inline ∂x²_faa(i, j, k, grid, u) = ∂x_faa(i, j, k, grid, ∂x_caa, u)
+@inline ∂x²_caa(i, j, k, grid, c, args...) = ∂x_caa(i, j, k, grid, ∂x_faa, c, args...)
+@inline ∂x²_faa(i, j, k, grid, u, args...) = ∂x_faa(i, j, k, grid, ∂x_caa, u, args...)
 
-@inline ∂y²_aca(i, j, k, grid, c) = ∂y_aca(i, j, k, grid, ∂y_afa, c)
-@inline ∂y²_afa(i, j, k, grid, v) = ∂y_afa(i, j, k, grid, ∂y_aca, v)
+@inline ∂y²_aca(i, j, k, grid, c, args...) = ∂y_aca(i, j, k, grid, ∂y_afa, c, args...)
+@inline ∂y²_afa(i, j, k, grid, v, args...) = ∂y_afa(i, j, k, grid, ∂y_aca, v, args...)
 
-@inline ∂z²_aac(i, j, k, grid, c) = ∂z_aac(i, j, k, grid, ∂z_aaf, c)
-@inline ∂z²_aaf(i, j, k, grid, w) = ∂z_aaf(i, j, k, grid, ∂z_aac, w)
+@inline ∂z²_aac(i, j, k, grid, c, args...) = ∂z_aac(i, j, k, grid, ∂z_aaf, c, args...)
+@inline ∂z²_aaf(i, j, k, grid, w, args...) = ∂z_aaf(i, j, k, grid, ∂z_aac, w, args...)
+
+@inline ∇h²_cca(i, j, k, grid, c) = (  ∂x²_caa(i, j, k, grid, c) 
+                                     + ∂y²_aca(i, j, k, grid, c))
+
+@inline ∇h²_fca(i, j, k, grid, u) = (  ∂x²_faa(i, j, k, grid, u) 
+                                     + ∂y²_aca(i, j, k, grid, u))
+
+@inline ∇h²_cfa(i, j, k, grid, v) = (  ∂x²_caa(i, j, k, grid, v) 
+                                     + ∂y²_afa(i, j, k, grid, v))
+
+#####
+##### Quadratic differentiation
+#####
+
+@inline ∇h⁴_cca(i, j, k, grid, c) = (  ∂x²_caa(i, j, k, grid, ∇h²_cca, c) 
+                                     + ∂y²_aca(i, j, k, grid, ∇h²_cca, c))
+
+@inline ∇h⁴_fca(i, j, k, grid, u) = (  ∂x²_faa(i, j, k, grid, ∇h²_fca, u) 
+                                     + ∂y²_aca(i, j, k, grid, ∇h²_fca, u))
+
+@inline ∇h⁴_cfa(i, j, k, grid, v) = (  ∂x²_caa(i, j, k, grid, ∇h²_cfa, v) 
+                                     + ∂y²_afa(i, j, k, grid, ∇h²_cfa, v))
+
+@inline ∂z⁴_aac(i, j, k, grid, c) = ∂z²_caa(i, j, k, grid, ∂z²_aac, c)
+@inline ∂z⁴_aaf(i, j, k, grid, w) = ∂z²_aaf(i, j, k, grid, ∂z²_aaf, w)
 
 #####
 ##### Interpolation operations for functions

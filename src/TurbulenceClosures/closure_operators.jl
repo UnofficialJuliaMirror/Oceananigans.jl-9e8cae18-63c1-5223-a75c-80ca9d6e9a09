@@ -158,7 +158,7 @@ located at `aaf` in `z`, across `aac`.
 @inline ∇h⁴_cfa(i, j, k, grid, v) = (  ∂x²_caa(i, j, k, grid, ∇h²_cfa, v) 
                                      + ∂y²_afa(i, j, k, grid, ∇h²_cfa, v))
 
-@inline ∂z⁴_aac(i, j, k, grid, c) = ∂z²_caa(i, j, k, grid, ∂z²_aac, c)
+@inline ∂z⁴_aac(i, j, k, grid, c) = ∂z²_aac(i, j, k, grid, ∂z²_aac, c)
 @inline ∂z⁴_aaf(i, j, k, grid, w) = ∂z²_aaf(i, j, k, grid, ∂z²_aaf, w)
 
 #####

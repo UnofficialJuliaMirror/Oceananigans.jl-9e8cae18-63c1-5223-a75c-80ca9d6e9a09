@@ -149,6 +149,15 @@ located at `aaf` in `z`, across `aac`.
 ##### Quadratic differentiation
 #####
 
+@inline ∂x⁴_caa(i, j, k, grid, c, args...) = ∂x²_caa(i, j, k, grid, ∂x²_faa, c, args...)
+@inline ∂x⁴_faa(i, j, k, grid, u, args...) = ∂x²_faa(i, j, k, grid, ∂x²_caa, u, args...)
+
+@inline ∂y⁴_aca(i, j, k, grid, c, args...) = ∂y²_aca(i, j, k, grid, ∂y²_afa, c, args...)
+@inline ∂y⁴_afa(i, j, k, grid, v, args...) = ∂y²_afa(i, j, k, grid, ∂y²_aca, v, args...)
+
+@inline ∂z⁴_aac(i, j, k, grid, c, args...) = ∂z²_aac(i, j, k, grid, ∂z²_aaf, c, args...)
+@inline ∂z⁴_aaf(i, j, k, grid, w, args...) = ∂z²_aaf(i, j, k, grid, ∂z²_aac, w, args...)
+
 @inline ∇h⁴_cca(i, j, k, grid, c) = (  ∂x²_caa(i, j, k, grid, ∇h²_cca, c) 
                                      + ∂y²_aca(i, j, k, grid, ∇h²_cca, c))
 

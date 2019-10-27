@@ -1,6 +1,9 @@
 using .TurbulenceClosures: ▶z_aaf
 
 using Oceananigans.Operators
+using Oceananigans.Solvers
+
+using Oceananigans.Solvers: PPN, PNN
 
 const Tx = 16 # CUDA threads per x-block
 const Ty = 16 # CUDA threads per y-block

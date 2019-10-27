@@ -1,3 +1,7 @@
+import Base: size, length, eltype, show
+
+using Oceananigans: AbstractGrid
+
 """
     RegularCartesianGrid{FT<:AbstractFloat, R<:AbstractRange} <: AbstractGrid{FT}
 
@@ -159,9 +163,9 @@ eltype(grid::RegularCartesianGrid{FT}) where FT = FT
 
 short_show(grid::RegularCartesianGrid{T}) where T = "RegularCartesianGrid{$T}"
 
-show_domain(grid) = string("x ∈ [", grid.xF[1], ", ", grid.xF[end], "], ", 
-                           "y ∈ [", grid.yF[1], ", ", grid.yF[end], "], ", 
-                           "z ∈ [", grid.zF[1], ", ", grid.zF[end], "]") 
+show_domain(grid) = string("x ∈ [", grid.xF[1], ", ", grid.xF[end], "], ",
+                           "y ∈ [", grid.yF[1], ", ", grid.yF[end], "], ",
+                           "z ∈ [", grid.zF[1], ", ", grid.zF[end], "]")
 
 show(io::IO, g::RegularCartesianGrid) =
     print(io, "RegularCartesianGrid{$(eltype(g))}\n",

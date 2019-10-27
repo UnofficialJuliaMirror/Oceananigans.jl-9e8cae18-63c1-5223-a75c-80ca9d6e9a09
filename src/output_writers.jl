@@ -1,3 +1,5 @@
+using Oceananigans.Grids
+
 ####
 #### Output writer utilities
 ####
@@ -297,7 +299,7 @@ get_slice(n::UnitRange) = n
 get_slice(n::Nothing) = Colon()
 
 """
-    write_grid(model; filename="grid.nc", mode="c", 
+    write_grid(model; filename="grid.nc", mode="c",
                compression=0, attributes=Dict(), slice_kw...)
 
 Writes a grid.nc file that contains all the dimensions of the domain.

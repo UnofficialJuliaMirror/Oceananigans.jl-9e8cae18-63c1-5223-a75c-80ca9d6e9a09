@@ -1,5 +1,6 @@
 using
     Oceananigans,
+    Oceananigans.Grids,
     Oceananigans.Operators,
     Oceananigans.TurbulenceClosures,
     Test,

@@ -10,7 +10,7 @@ using Oceananigans: @hascuda
 
 @hascuda using CUDAnative, CUDAdrv, CuArrays
 
-using Oceananigans, Adapt
+using Oceananigans, Oceananigans.Grids, Adapt
 
 using Oceananigans: AbstractModel, AbstractGrid, AbstractField, AbstractLocatedField, Face, Cell, 
                     xnode, ynode, znode, location, show_location, show_domain, short_show,

@@ -127,43 +127,48 @@ located at `aaf` in `z`, across `aac`.
 ##### Double differentiation
 #####
 
-@inline ∂x²_caa(i, j, k, grid, c, args...) = ∂x_caa(i, j, k, grid, ∂x_faa, c, args...)
-@inline ∂x²_faa(i, j, k, grid, u, args...) = ∂x_faa(i, j, k, grid, ∂x_caa, u, args...)
+@inline ∂x²_caa(i, j, k, grid, c::AbstractArray) = ∂x_caa(i, j, k, grid, ∂x_faa, c)
+@inline ∂x²_faa(i, j, k, grid, u::AbstractArray) = ∂x_faa(i, j, k, grid, ∂x_caa, u)
+@inline ∂y²_aca(i, j, k, grid, c::AbstractArray) = ∂y_aca(i, j, k, grid, ∂y_afa, c)
+@inline ∂y²_afa(i, j, k, grid, v::AbstractArray) = ∂y_afa(i, j, k, grid, ∂y_aca, v)
+@inline ∂z²_aac(i, j, k, grid, c::AbstractArray) = ∂z_aac(i, j, k, grid, ∂z_aaf, c)
+@inline ∂z²_aaf(i, j, k, grid, w::AbstractArray) = ∂z_aaf(i, j, k, grid, ∂z_aac, w)
 
-@inline ∂y²_aca(i, j, k, grid, c, args...) = ∂y_aca(i, j, k, grid, ∂y_afa, c, args...)
-@inline ∂y²_afa(i, j, k, grid, v, args...) = ∂y_afa(i, j, k, grid, ∂y_aca, v, args...)
+@inline ∇h²_cca(i, j, k, grid, c::AbstractArray) = ∂x²_caa(i, j, k, grid, c) + ∂y²_aca(i, j, k, grid, c)
+@inline ∇h²_fca(i, j, k, grid, u::AbstractArray) = ∂x²_faa(i, j, k, grid, u) + ∂y²_aca(i, j, k, grid, u)
+@inline ∇h²_cfa(i, j, k, grid, v::AbstractArray) = ∂x²_caa(i, j, k, grid, v) + ∂y²_afa(i, j, k, grid, v)
 
-@inline ∂z²_aac(i, j, k, grid, c, args...) = ∂z_aac(i, j, k, grid, ∂z_aaf, c, args...)
-@inline ∂z²_aaf(i, j, k, grid, w, args...) = ∂z_aaf(i, j, k, grid, ∂z_aac, w, args...)
+@inline ∂x²_caa(i, j, k, grid, F::FU, args...) where FU <: Function = ∂x_caa(i, j, k, grid, ∂x_faa, F, args...)
+@inline ∂x²_faa(i, j, k, grid, F::FU, args...) where FU <: Function = ∂x_faa(i, j, k, grid, ∂x_caa, F, args...)
+@inline ∂y²_aca(i, j, k, grid, F::FU, args...) where FU <: Function = ∂y_aca(i, j, k, grid, ∂y_afa, F, args...)
+@inline ∂y²_afa(i, j, k, grid, F::FU, args...) where FU <: Function = ∂y_afa(i, j, k, grid, ∂y_aca, F, args...)
+@inline ∂z²_aac(i, j, k, grid, F::FU, args...) where FU <: Function = ∂z_aac(i, j, k, grid, ∂z_aaf, F, args...)
+@inline ∂z²_aaf(i, j, k, grid, F::FU, args...) where FU <: Function = ∂z_aaf(i, j, k, grid, ∂z_aac, F, args...)
 
-@inline ∇h²_cca(i, j, k, grid, c, args...) = (  ∂x²_caa(i, j, k, grid, c, args...) 
-                                              + ∂y²_aca(i, j, k, grid, c, args...))
-
-@inline ∇h²_fca(i, j, k, grid, u, args...) = (  ∂x²_faa(i, j, k, grid, u, args...) 
-                                              + ∂y²_aca(i, j, k, grid, u, args...))
-
-@inline ∇h²_cfa(i, j, k, grid, v, args...) = (  ∂x²_caa(i, j, k, grid, v, args...) 
-                                              + ∂y²_afa(i, j, k, grid, v, args...))
+@inline ∇h²_cca(i, j, k, grid, F::FU, args...) where FU <: Function = ∂x²_caa(i, j, k, grid, c, args...) + ∂y²_aca(i, j, k, grid, c, args...)
+@inline ∇h²_fca(i, j, k, grid, F::FU, args...) where FU <: Function = ∂x²_faa(i, j, k, grid, u, args...) + ∂y²_aca(i, j, k, grid, u, args...)
+@inline ∇h²_cfa(i, j, k, grid, F::FU, args...) where FU <: Function = ∂x²_caa(i, j, k, grid, v, args...) + ∂y²_afa(i, j, k, grid, v, args...)
+                                              
 
 #####
 ##### Quadratic differentiation
 #####
 
-@inline ∂x⁴_caa(i, j, k, grid, c, args...) = ∂x²_caa(i, j, k, grid, ∂x²_caa, c, args...)
-@inline ∂x⁴_faa(i, j, k, grid, u, args...) = ∂x²_faa(i, j, k, grid, ∂x²_faa, u, args...)
+@inline ∂x⁴_caa(i, j, k, grid, c::AbstractArray) = ∂x²_caa(i, j, k, grid, ∂x²_caa, c)
+@inline ∂x⁴_faa(i, j, k, grid, u::AbstractArray) = ∂x²_faa(i, j, k, grid, ∂x²_faa, u)
 
-@inline ∂y⁴_aca(i, j, k, grid, c, args...) = ∂y²_aca(i, j, k, grid, ∂y²_aca, c, args...)
-@inline ∂y⁴_afa(i, j, k, grid, v, args...) = ∂y²_afa(i, j, k, grid, ∂y²_afa, v, args...)
+@inline ∂y⁴_aca(i, j, k, grid, c::AbstractArray) = ∂y²_aca(i, j, k, grid, ∂y²_aca, c)
+@inline ∂y⁴_afa(i, j, k, grid, v::AbstractArray) = ∂y²_afa(i, j, k, grid, ∂y²_afa, v)
 
-@inline ∂z⁴_aac(i, j, k, grid, c, args...) = ∂z²_aac(i, j, k, grid, ∂z²_aac, c, args...)
-@inline ∂z⁴_aaf(i, j, k, grid, w, args...) = ∂z²_aaf(i, j, k, grid, ∂z²_aaf, w, args...)
+@inline ∂z⁴_aac(i, j, k, grid, c::AbstractArray) = ∂z²_aac(i, j, k, grid, ∂z²_aac, c)
+@inline ∂z⁴_aaf(i, j, k, grid, w::AbstractArray) = ∂z²_aaf(i, j, k, grid, ∂z²_aaf, w)
 
-@inline ∇h⁴_cca(i, j, k, grid, c, args...) = ∇h²_cca(i, j, k, grid, ∇h²_cca, c, args...)
-@inline ∇h⁴_fca(i, j, k, grid, c, args...) = ∇h²_fca(i, j, k, grid, ∇h²_fca, c, args...)
-@inline ∇h⁴_cfa(i, j, k, grid, c, args...) = ∇h²_cfa(i, j, k, grid, ∇h²_cfa, c, args...)
+@inline ∇h⁴_cca(i, j, k, grid, c::AbstractArray) = ∇h²_cca(i, j, k, grid, ∇h²_cca, c)
+@inline ∇h⁴_fca(i, j, k, grid, c::AbstractArray) = ∇h²_fca(i, j, k, grid, ∇h²_fca, c)
+@inline ∇h⁴_cfa(i, j, k, grid, c::AbstractArray) = ∇h²_cfa(i, j, k, grid, ∇h²_cfa, c)
 
-@inline ∂z⁴_aac(i, j, k, grid, c, args...) = ∂z²_aac(i, j, k, grid, ∂z²_aac, c, args...)
-@inline ∂z⁴_aaf(i, j, k, grid, w, args...) = ∂z²_aaf(i, j, k, grid, ∂z²_aaf, w, args...)
+@inline ∂z⁴_aac(i, j, k, grid, c::AbstractArray) = ∂z²_aac(i, j, k, grid, ∂z²_aac, c)
+@inline ∂z⁴_aaf(i, j, k, grid, w::AbstractArray) = ∂z²_aaf(i, j, k, grid, ∂z²_aaf, w)
 
 #####
 ##### Interpolation operations for functions

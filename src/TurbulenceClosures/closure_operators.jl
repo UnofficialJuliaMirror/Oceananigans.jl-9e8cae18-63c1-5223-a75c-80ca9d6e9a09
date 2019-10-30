@@ -62,6 +62,12 @@ located at `caa` in `x`, across `faa`.
 @inline ∂x_faa(i, j, k, grid, F::TF, args...) where TF<:Function =
     (F(i, j, k, grid, args...) - F(i-1, j, k, grid, args...)) / grid.Δx
 
+@inline ∂x_faa(i, j, k, grid, F::TF, arg1) where TF<:Function =
+    (F(i, j, k, grid, arg1) - F(i-1, j, k, grid, arg1)) / grid.Δx
+
+@inline ∂x_faa(i, j, k, grid, F::TF, arg1, arg2) where TF<:Function =
+    (F(i, j, k, grid, arg1, arg2) - F(i-1, j, k, grid, arg1, arg2)) / grid.Δx
+
 """
     ∂x_caa(i, j, k, grid, F, args...)
 
@@ -73,6 +79,12 @@ located at `faa` in `x`, across `caa`.
 """
 @inline ∂x_caa(i, j, k, grid, F::TF, args...) where TF<:Function =
     (F(i+1, j, k, grid, args...) - F(i, j, k, grid, args...)) / grid.Δx
+
+@inline ∂x_caa(i, j, k, grid, F::TF, arg1) where TF<:Function =
+    (F(i+1, j, k, grid, arg1) - F(i, j, k, grid, arg1)) / grid.Δx
+
+@inline ∂x_caa(i, j, k, grid, F::TF, arg1, arg2) where TF<:Function =
+    (F(i+1, j, k, grid, arg1, arg2) - F(i, j, k, grid, arg1, arg2)) / grid.Δx
 
 """
     ∂y_afa(i, j, k, grid, F, args...)
@@ -86,6 +98,12 @@ located at `aca` in `y`, across `afa`.
 @inline ∂y_afa(i, j, k, grid, F::TF, args...) where TF<:Function =
     (F(i, j, k, grid, args...) - F(i, j-1, k, grid, args...)) / grid.Δy
 
+@inline ∂y_afa(i, j, k, grid, F::TF, arg1) where TF<:Function =
+    (F(i, j, k, grid, arg1) - F(i, j-1, k, grid, arg1)) / grid.Δy
+
+@inline ∂y_afa(i, j, k, grid, F::TF, arg1, arg2) where TF<:Function =
+    (F(i, j, k, grid, arg1, arg2) - F(i, j-1, k, grid, arg1, arg2)) / grid.Δy
+
 """
     ∂y_aca(i, j, k, grid, F, args...)
 
@@ -97,6 +115,12 @@ located at `afa` in `y`, across `aca`.
 """
 @inline ∂y_aca(i, j, k, grid, F::TF, args...) where TF<:Function =
     (F(i, j+1, k, grid, args...) - F(i, j, k, grid, args...)) / grid.Δy
+
+@inline ∂y_aca(i, j, k, grid, F::TF, arg1) where TF<:Function =
+    (F(i, j+1, k, grid, arg1) - F(i, j, k, grid, arg1)) / grid.Δy
+
+@inline ∂y_aca(i, j, k, grid, F::TF, arg1, arg2) where TF<:Function =
+    (F(i, j+1, k, grid, arg1, arg2) - F(i, j, k, grid, arg1, arg2)) / grid.Δy
 
 """
     ∂z_aaf(i, j, k, grid, F, args...)
@@ -110,6 +134,12 @@ located at `aac` in `z`, across `aaf`.
 @inline ∂z_aaf(i, j, k, grid::AbstractGrid, F::TF, args...) where TF<:Function =
     (F(i, j, k, grid, args...) - F(i, j, k-1, grid, args...)) / grid.Δz
 
+@inline ∂z_aaf(i, j, k, grid::AbstractGrid, F::TF, arg1) where TF<:Function =
+    (F(i, j, k, grid, arg1) - F(i, j, k-1, grid, arg1)) / grid.Δz
+
+@inline ∂z_aaf(i, j, k, grid::AbstractGrid, F::TF, arg1, arg2) where TF<:Function =
+    (F(i, j, k, grid, arg1, arg2) - F(i, j, k-1, grid, arg1, arg2)) / grid.Δz
+
 
 """
     ∂z_aac(i, j, k, grid, F, args...)
@@ -122,6 +152,12 @@ located at `aaf` in `z`, across `aac`.
 """
 @inline ∂z_aac(i, j, k, grid, F::TF, args...) where TF<:Function =
     (F(i, j, k+1, grid, args...) - F(i, j, k, grid, args...)) / grid.Δz
+
+@inline ∂z_aac(i, j, k, grid, F::TF, arg1) where TF<:Function =
+    (F(i, j, k+1, grid, arg1) - F(i, j, k, grid, arg1)) / grid.Δz
+
+@inline ∂z_aac(i, j, k, grid, F::TF, arg1, arg2) where TF<:Function =
+    (F(i, j, k+1, grid, arg1, arg2) - F(i, j, k, grid, arg1, arg2)) / grid.Δz
 
 #####
 ##### Double differentiation
@@ -138,13 +174,22 @@ located at `aaf` in `z`, across `aac`.
 @inline ∇h²_fca(i, j, k, grid, u::AbstractArray) = ∂x²_faa(i, j, k, grid, u) + ∂y²_aca(i, j, k, grid, u)
 @inline ∇h²_cfa(i, j, k, grid, v::AbstractArray) = ∂x²_caa(i, j, k, grid, v) + ∂y²_afa(i, j, k, grid, v)
 
+@inline ∂x²_caa(i, j, k, grid, F::FU, arg1) where FU <: Function = ∂x_caa(i, j, k, grid, ∂x_faa, F, arg1)
+@inline ∂x²_faa(i, j, k, grid, F::FU, arg1) where FU <: Function = ∂x_faa(i, j, k, grid, ∂x_caa, F, arg1)
+@inline ∂y²_aca(i, j, k, grid, F::FU, arg1) where FU <: Function = ∂y_aca(i, j, k, grid, ∂y_afa, F, arg1)
+@inline ∂y²_afa(i, j, k, grid, F::FU, arg1) where FU <: Function = ∂y_afa(i, j, k, grid, ∂y_aca, F, arg1)
+@inline ∂z²_aac(i, j, k, grid, F::FU, arg1) where FU <: Function = ∂z_aac(i, j, k, grid, ∂z_aaf, F, arg1)
+@inline ∂z²_aaf(i, j, k, grid, F::FU, arg1) where FU <: Function = ∂z_aaf(i, j, k, grid, ∂z_aac, F, arg1)
+@inline ∇h²_cca(i, j, k, grid, F::FU, arg1) where FU <: Function = ∂x²_caa(i, j, k, grid, c, arg1) + ∂y²_aca(i, j, k, grid, c, arg1)
+@inline ∇h²_fca(i, j, k, grid, F::FU, arg1) where FU <: Function = ∂x²_faa(i, j, k, grid, u, arg1) + ∂y²_aca(i, j, k, grid, u, arg1)
+@inline ∇h²_cfa(i, j, k, grid, F::FU, arg1) where FU <: Function = ∂x²_caa(i, j, k, grid, v, arg1) + ∂y²_afa(i, j, k, grid, v, arg1)
+
 @inline ∂x²_caa(i, j, k, grid, F::FU, args...) where FU <: Function = ∂x_caa(i, j, k, grid, ∂x_faa, F, args...)
 @inline ∂x²_faa(i, j, k, grid, F::FU, args...) where FU <: Function = ∂x_faa(i, j, k, grid, ∂x_caa, F, args...)
 @inline ∂y²_aca(i, j, k, grid, F::FU, args...) where FU <: Function = ∂y_aca(i, j, k, grid, ∂y_afa, F, args...)
 @inline ∂y²_afa(i, j, k, grid, F::FU, args...) where FU <: Function = ∂y_afa(i, j, k, grid, ∂y_aca, F, args...)
 @inline ∂z²_aac(i, j, k, grid, F::FU, args...) where FU <: Function = ∂z_aac(i, j, k, grid, ∂z_aaf, F, args...)
 @inline ∂z²_aaf(i, j, k, grid, F::FU, args...) where FU <: Function = ∂z_aaf(i, j, k, grid, ∂z_aac, F, args...)
-
 @inline ∇h²_cca(i, j, k, grid, F::FU, args...) where FU <: Function = ∂x²_caa(i, j, k, grid, c, args...) + ∂y²_aca(i, j, k, grid, c, args...)
 @inline ∇h²_fca(i, j, k, grid, F::FU, args...) where FU <: Function = ∂x²_faa(i, j, k, grid, u, args...) + ∂y²_aca(i, j, k, grid, u, args...)
 @inline ∇h²_cfa(i, j, k, grid, F::FU, args...) where FU <: Function = ∂x²_caa(i, j, k, grid, v, args...) + ∂y²_afa(i, j, k, grid, v, args...)

@@ -163,10 +163,13 @@ located at `aaf` in `z`, across `aac`.
 ##### Double differentiation
 #####
 
+# With arrays
 @inline ∂x²_caa(i, j, k, grid, c::AbstractArray) = ∂x_caa(i, j, k, grid, ∂x_faa, c)
 @inline ∂x²_faa(i, j, k, grid, u::AbstractArray) = ∂x_faa(i, j, k, grid, ∂x_caa, u)
+
 @inline ∂y²_aca(i, j, k, grid, c::AbstractArray) = ∂y_aca(i, j, k, grid, ∂y_afa, c)
 @inline ∂y²_afa(i, j, k, grid, v::AbstractArray) = ∂y_afa(i, j, k, grid, ∂y_aca, v)
+
 @inline ∂z²_aac(i, j, k, grid, c::AbstractArray) = ∂z_aac(i, j, k, grid, ∂z_aaf, c)
 @inline ∂z²_aaf(i, j, k, grid, w::AbstractArray) = ∂z_aaf(i, j, k, grid, ∂z_aac, w)
 
@@ -174,32 +177,44 @@ located at `aaf` in `z`, across `aac`.
 @inline ∇h²_fca(i, j, k, grid, u::AbstractArray) = ∂x²_faa(i, j, k, grid, u) + ∂y²_aca(i, j, k, grid, u)
 @inline ∇h²_cfa(i, j, k, grid, v::AbstractArray) = ∂x²_caa(i, j, k, grid, v) + ∂y²_afa(i, j, k, grid, v)
 
+# With functions and one argument
 @inline ∂x²_caa(i, j, k, grid, F::FU, arg1) where FU <: Function = ∂x_caa(i, j, k, grid, ∂x_faa, F, arg1)
 @inline ∂x²_faa(i, j, k, grid, F::FU, arg1) where FU <: Function = ∂x_faa(i, j, k, grid, ∂x_caa, F, arg1)
+
 @inline ∂y²_aca(i, j, k, grid, F::FU, arg1) where FU <: Function = ∂y_aca(i, j, k, grid, ∂y_afa, F, arg1)
 @inline ∂y²_afa(i, j, k, grid, F::FU, arg1) where FU <: Function = ∂y_afa(i, j, k, grid, ∂y_aca, F, arg1)
+
 @inline ∂z²_aac(i, j, k, grid, F::FU, arg1) where FU <: Function = ∂z_aac(i, j, k, grid, ∂z_aaf, F, arg1)
 @inline ∂z²_aaf(i, j, k, grid, F::FU, arg1) where FU <: Function = ∂z_aaf(i, j, k, grid, ∂z_aac, F, arg1)
+
 @inline ∇h²_cca(i, j, k, grid, F::FU, arg1) where FU <: Function = ∂x²_caa(i, j, k, grid, c, arg1) + ∂y²_aca(i, j, k, grid, c, arg1)
 @inline ∇h²_fca(i, j, k, grid, F::FU, arg1) where FU <: Function = ∂x²_faa(i, j, k, grid, u, arg1) + ∂y²_aca(i, j, k, grid, u, arg1)
 @inline ∇h²_cfa(i, j, k, grid, F::FU, arg1) where FU <: Function = ∂x²_caa(i, j, k, grid, v, arg1) + ∂y²_afa(i, j, k, grid, v, arg1)
 
+# With functions and two arguments
 @inline ∂x²_caa(i, j, k, grid, F::FU, arg1, arg2) where FU <: Function = ∂x_caa(i, j, k, grid, ∂x_faa, F, arg1, arg2)
 @inline ∂x²_faa(i, j, k, grid, F::FU, arg1, arg2) where FU <: Function = ∂x_faa(i, j, k, grid, ∂x_caa, F, arg1, arg2)
+
 @inline ∂y²_aca(i, j, k, grid, F::FU, arg1, arg2) where FU <: Function = ∂y_aca(i, j, k, grid, ∂y_afa, F, arg1, arg2)
 @inline ∂y²_afa(i, j, k, grid, F::FU, arg1, arg2) where FU <: Function = ∂y_afa(i, j, k, grid, ∂y_aca, F, arg1, arg2)
+
 @inline ∂z²_aac(i, j, k, grid, F::FU, arg1, arg2) where FU <: Function = ∂z_aac(i, j, k, grid, ∂z_aaf, F, arg1, arg2)
 @inline ∂z²_aaf(i, j, k, grid, F::FU, arg1, arg2) where FU <: Function = ∂z_aaf(i, j, k, grid, ∂z_aac, F, arg1, arg2)
+
 @inline ∇h²_cca(i, j, k, grid, F::FU, arg1, arg2) where FU <: Function = ∂x²_caa(i, j, k, grid, c, arg1, arg2) + ∂y²_aca(i, j, k, grid, c, arg1, arg2)
 @inline ∇h²_fca(i, j, k, grid, F::FU, arg1, arg2) where FU <: Function = ∂x²_faa(i, j, k, grid, u, arg1, arg2) + ∂y²_aca(i, j, k, grid, u, arg1, arg2)
 @inline ∇h²_cfa(i, j, k, grid, F::FU, arg1, arg2) where FU <: Function = ∂x²_caa(i, j, k, grid, v, arg1, arg2) + ∂y²_afa(i, j, k, grid, v, arg1, arg2)
 
+# With functions and arbitrary arguments (more than two nested function arguments may not compile on GPU)
 @inline ∂x²_caa(i, j, k, grid, F::FU, args...) where FU <: Function = ∂x_caa(i, j, k, grid, ∂x_faa, F, args...)
 @inline ∂x²_faa(i, j, k, grid, F::FU, args...) where FU <: Function = ∂x_faa(i, j, k, grid, ∂x_caa, F, args...)
+
 @inline ∂y²_aca(i, j, k, grid, F::FU, args...) where FU <: Function = ∂y_aca(i, j, k, grid, ∂y_afa, F, args...)
 @inline ∂y²_afa(i, j, k, grid, F::FU, args...) where FU <: Function = ∂y_afa(i, j, k, grid, ∂y_aca, F, args...)
+
 @inline ∂z²_aac(i, j, k, grid, F::FU, args...) where FU <: Function = ∂z_aac(i, j, k, grid, ∂z_aaf, F, args...)
 @inline ∂z²_aaf(i, j, k, grid, F::FU, args...) where FU <: Function = ∂z_aaf(i, j, k, grid, ∂z_aac, F, args...)
+
 @inline ∇h²_cca(i, j, k, grid, F::FU, args...) where FU <: Function = ∂x²_caa(i, j, k, grid, c, args...) + ∂y²_aca(i, j, k, grid, c, args...)
 @inline ∇h²_fca(i, j, k, grid, F::FU, args...) where FU <: Function = ∂x²_faa(i, j, k, grid, u, args...) + ∂y²_aca(i, j, k, grid, u, args...)
 @inline ∇h²_cfa(i, j, k, grid, F::FU, args...) where FU <: Function = ∂x²_caa(i, j, k, grid, v, args...) + ∂y²_afa(i, j, k, grid, v, args...)

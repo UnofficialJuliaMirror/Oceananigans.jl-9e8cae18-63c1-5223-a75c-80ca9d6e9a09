@@ -177,6 +177,7 @@ located at `aaf` in `z`, across `aac`.
 @inline ∇h²_fca(i, j, k, grid, u::AbstractArray) = ∂x²_faa(i, j, k, grid, u) + ∂y²_aca(i, j, k, grid, u)
 @inline ∇h²_cfa(i, j, k, grid, v::AbstractArray) = ∂x²_caa(i, j, k, grid, v) + ∂y²_afa(i, j, k, grid, v)
 
+#=
 # With functions and one argument
 @inline ∂x²_caa(i, j, k, grid, F::FU, arg1) where FU <: Function = ∂x_caa(i, j, k, grid, ∂x_faa, F, arg1)
 @inline ∂x²_faa(i, j, k, grid, F::FU, arg1) where FU <: Function = ∂x_faa(i, j, k, grid, ∂x_caa, F, arg1)
@@ -204,6 +205,7 @@ located at `aaf` in `z`, across `aac`.
 @inline ∇h²_cca(i, j, k, grid, F::FU, arg1, arg2) where FU <: Function = ∂x²_caa(i, j, k, grid, F, arg1, arg2) + ∂y²_aca(i, j, k, grid, F, arg1, arg2)
 @inline ∇h²_fca(i, j, k, grid, F::FU, arg1, arg2) where FU <: Function = ∂x²_faa(i, j, k, grid, F, arg1, arg2) + ∂y²_aca(i, j, k, grid, F, arg1, arg2)
 @inline ∇h²_cfa(i, j, k, grid, F::FU, arg1, arg2) where FU <: Function = ∂x²_caa(i, j, k, grid, F, arg1, arg2) + ∂y²_afa(i, j, k, grid, F, arg1, arg2)
+=#
 
 # With functions and arbitrary arguments (more than two nested function arguments may not compile on GPU)
 @inline ∂x²_caa(i, j, k, grid, F::FU, args...) where FU <: Function = ∂x_caa(i, j, k, grid, ∂x_faa, F, args...)

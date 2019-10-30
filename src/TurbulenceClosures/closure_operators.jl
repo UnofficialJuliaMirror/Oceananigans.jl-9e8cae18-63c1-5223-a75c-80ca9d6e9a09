@@ -184,6 +184,16 @@ located at `aaf` in `z`, across `aac`.
 @inline ∇h²_fca(i, j, k, grid, F::FU, arg1) where FU <: Function = ∂x²_faa(i, j, k, grid, u, arg1) + ∂y²_aca(i, j, k, grid, u, arg1)
 @inline ∇h²_cfa(i, j, k, grid, F::FU, arg1) where FU <: Function = ∂x²_caa(i, j, k, grid, v, arg1) + ∂y²_afa(i, j, k, grid, v, arg1)
 
+@inline ∂x²_caa(i, j, k, grid, F::FU, arg1, arg2) where FU <: Function = ∂x_caa(i, j, k, grid, ∂x_faa, F, arg1, arg2)
+@inline ∂x²_faa(i, j, k, grid, F::FU, arg1, arg2) where FU <: Function = ∂x_faa(i, j, k, grid, ∂x_caa, F, arg1, arg2)
+@inline ∂y²_aca(i, j, k, grid, F::FU, arg1, arg2) where FU <: Function = ∂y_aca(i, j, k, grid, ∂y_afa, F, arg1, arg2)
+@inline ∂y²_afa(i, j, k, grid, F::FU, arg1, arg2) where FU <: Function = ∂y_afa(i, j, k, grid, ∂y_aca, F, arg1, arg2)
+@inline ∂z²_aac(i, j, k, grid, F::FU, arg1, arg2) where FU <: Function = ∂z_aac(i, j, k, grid, ∂z_aaf, F, arg1, arg2)
+@inline ∂z²_aaf(i, j, k, grid, F::FU, arg1, arg2) where FU <: Function = ∂z_aaf(i, j, k, grid, ∂z_aac, F, arg1, arg2)
+@inline ∇h²_cca(i, j, k, grid, F::FU, arg1, arg2) where FU <: Function = ∂x²_caa(i, j, k, grid, c, arg1, arg2) + ∂y²_aca(i, j, k, grid, c, arg1, arg2)
+@inline ∇h²_fca(i, j, k, grid, F::FU, arg1, arg2) where FU <: Function = ∂x²_faa(i, j, k, grid, u, arg1, arg2) + ∂y²_aca(i, j, k, grid, u, arg1, arg2)
+@inline ∇h²_cfa(i, j, k, grid, F::FU, arg1, arg2) where FU <: Function = ∂x²_caa(i, j, k, grid, v, arg1, arg2) + ∂y²_afa(i, j, k, grid, v, arg1, arg2)
+
 @inline ∂x²_caa(i, j, k, grid, F::FU, args...) where FU <: Function = ∂x_caa(i, j, k, grid, ∂x_faa, F, args...)
 @inline ∂x²_faa(i, j, k, grid, F::FU, args...) where FU <: Function = ∂x_faa(i, j, k, grid, ∂x_caa, F, args...)
 @inline ∂y²_aca(i, j, k, grid, F::FU, args...) where FU <: Function = ∂y_aca(i, j, k, grid, ∂y_afa, F, args...)

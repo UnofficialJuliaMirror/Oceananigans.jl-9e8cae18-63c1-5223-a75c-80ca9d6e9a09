@@ -236,9 +236,6 @@ located at `aaf` in `z`, across `aac`.
 @inline ∇h⁴_fca(i, j, k, grid, c::AbstractArray) = ∇h²_fca(i, j, k, grid, ∇h²_fca, c)
 @inline ∇h⁴_cfa(i, j, k, grid, c::AbstractArray) = ∇h²_cfa(i, j, k, grid, ∇h²_cfa, c)
 
-@inline ∂z⁴_aac(i, j, k, grid, c::AbstractArray) = ∂z²_aac(i, j, k, grid, ∂z²_aac, c)
-@inline ∂z⁴_aaf(i, j, k, grid, w::AbstractArray) = ∂z²_aaf(i, j, k, grid, ∂z²_aaf, w)
-
 #####
 ##### Interpolation operations for functions
 #####

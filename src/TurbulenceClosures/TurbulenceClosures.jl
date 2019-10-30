@@ -4,7 +4,7 @@ export
   IsotropicDiffusivity,
   ConstantIsotropicDiffusivity,
   ConstantAnisotropicDiffusivity,
-  AnisotropicBiharmonicDiffusivity,
+  HorizontalBiharmonicDiffusivity,
   ConstantSmagorinsky,
   SmagorinskyLilly,
   BlasiusSmagorinsky,
